@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import Image from "next/image";
 import { CONTROL_COOKIE, controlCookieOptions, type ControlSession } from "@/lib/auth";
 
 const sections = [
@@ -36,7 +37,15 @@ function SidebarContent({ session }: { session: ControlSession }) {
   return (
     <div className="flex h-full flex-col bg-ink-panel text-white">
       <div className="border-b border-white/10 px-5 py-5">
-        <p className="text-lg font-semibold">ORÇAH CONTROL</p>
+        <Image
+          src="/brand/orcah-logo-branco.svg"
+          alt="Orçah"
+          width={872}
+          height={242}
+          className="h-8 w-auto"
+          priority
+        />
+        <p className="mt-3 text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Control</p>
         <p className="mt-1 text-xs text-white/55">Monitoramento interno</p>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">

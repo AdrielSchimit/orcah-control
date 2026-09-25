@@ -15,6 +15,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ORÇAH CONTROL",
   description: "Painel interno read-only do ORÇAH.",
+  applicationName: "ORÇAH CONTROL",
+  icons: {
+    icon: [
+      { url: "/brand/orcah-icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
