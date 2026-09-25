@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ORÇAH CONTROL
 
-## Getting Started
+Painel interno read-only para monitorar o ORÇAH.
 
-First, run the development server:
+## Objetivo
+
+O Control acompanha empresas, usuários, orçamentos, assinaturas, eventos e integração Asaas sem alterar dados críticos do SaaS.
+
+## Stack
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Prisma
+- PostgreSQL Supabase
+- Vercel
+
+## Instalação
+
+```bash
+npm install
+npm run db:validate
+npm run build
+```
+
+## Execução
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variáveis de ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Nunca coloque valores reais no repositório.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+DATABASE_URL=
+DIRECT_URL=
+CONTROL_AUTH_SECRET=
+CONTROL_ADMIN_EMAILS=
+ASAAS_API_URL=
+ASAAS_API_KEY=
+NEXT_PUBLIC_APP_URL=
+```
 
-## Learn More
+## Comandos
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Segurança
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Login reutiliza usuários existentes do ORÇAH.
+- `CONTROL_ADMIN_EMAILS` define a allowlist administrativa.
+- Sessão usa cookie `httpOnly`, `sameSite=lax` e `secure` em produção.
+- O painel é read-only.
+- O frontend não recebe `DATABASE_URL`, `ASAAS_API_KEY`, hashes de senha, tokens ou cookies.
+- CPF/CNPJ é mascarado.
+- IDs externos financeiros são mascarados quando apropriado.
 
-## Deploy on Vercel
+## Arquitetura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+O Prisma usa o mesmo schema do ORÇAH para ler o PostgreSQL Supabase. As páginas protegidas consultam dados no servidor. A área Asaas usa apenas chamadas `GET` server-side.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Asaas
+
+Veja `docs/ASAAS_AUDIT.md`.
