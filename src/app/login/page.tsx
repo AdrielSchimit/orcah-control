@@ -19,9 +19,9 @@ export default async function LoginPage() {
           priority
         />
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-ink-soft">Control</p>
-        <h1 className="mt-3 text-3xl font-semibold text-ink">Acesso interno</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-ink">Painel administrativo</h1>
         <p className="mt-2 text-sm leading-6 text-ink-soft">
-          Use seu usuário do ORÇAH. O acesso só é liberado para e-mails em CONTROL_ADMIN_EMAILS.
+          Entre com seu acesso autorizado para acompanhar o ORÇAH.
         </p>
         <LoginForm />
       </div>
