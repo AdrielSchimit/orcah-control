@@ -1,20 +1,14 @@
 import { Badge, MetaLine, PageHeader, ReadOnlyNotice } from "@/components/ui";
 import { asaasEnvironment } from "@/lib/asaas";
 import { requireSession } from "@/lib/auth";
-
-type HealthResponse = {
-  app: string;
-  database: { ok: boolean; latencyMs?: number; error?: string };
-  asaas: { ok: boolean; configured: boolean; error?: string };
-};
+import { checkHealth, type HealthReport } from "@/lib/health";
 
 export default async function HealthPage() {
   await requireSession();
-  const base = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  let data: HealthResponse | null = null;
+  // chama o check direto: buscar /api/health pela URL do deploy esbarra na proteção da Vercel
+  let data: HealthReport | null = null;
   try {
-    const response = await fetch(`${base}/api/health`, { cache: "no-store" });
-    data = (await response.json()) as HealthResponse;
+    data = await checkHealth();
   } catch {
     data = null;
   }
@@ -28,7 +22,7 @@ export default async function HealthPage() {
           <h2 className="font-semibold">Supabase / Banco</h2>
           <div className="mt-3">
             <MetaLine label="Banco" value={<Badge tone={data?.database.ok ? "ok" : "bad"}>{data?.database.ok ? "Respondendo" : "Falha"}</Badge>} />
-            <MetaLine label="Latência" value={data?.database.latencyMs != null ? `${data.database.latencyMs}ms` : "-"} />
+            <MetaLine label="Latência" value={data?.database.ok ? `${data.database.latencyMs}ms` : "-"} />
           </div>
         </div>
         <div className="rounded-lg border border-line bg-card p-5 shadow-card">
