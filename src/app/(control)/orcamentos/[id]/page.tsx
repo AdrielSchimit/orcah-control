@@ -4,6 +4,22 @@ import { money } from "@/lib/format";
 import { requireSession } from "@/lib/auth";
 import { getBudgetDetails } from "@/lib/queries";
 
+type BudgetItemRow = {
+  id: number;
+  description: string;
+  quantity: unknown;
+  unit: string;
+  unitPrice: unknown;
+  subtotal: unknown;
+};
+
+type BudgetEventRow = {
+  id: number;
+  event: string;
+  createdAt: Date | string;
+  ipAddress?: string | null;
+};
+
 export default async function BudgetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireSession();
   const { id } = await params;
@@ -46,7 +62,7 @@ export default async function BudgetDetailPage({ params }: { params: Promise<{ i
         <DataTable>
           <thead><tr><Th>Descrição</Th><Th>Qtd</Th><Th>Unidade</Th><Th>Unitário</Th><Th>Subtotal</Th></tr></thead>
           <tbody className="divide-y divide-line">
-            {budget.items.map((item) => (
+            {(budget.items as BudgetItemRow[]).map((item) => (
               <tr key={item.id}>
                 <Td>{item.description}</Td>
                 <Td>{String(item.quantity)}</Td>
@@ -63,7 +79,7 @@ export default async function BudgetDetailPage({ params }: { params: Promise<{ i
         <DataTable>
           <thead><tr><Th>Tipo</Th><Th>Data</Th><Th>IP</Th></tr></thead>
           <tbody className="divide-y divide-line">
-            {budget.events.map((event) => (
+            {(budget.events as BudgetEventRow[]).map((event) => (
               <tr key={event.id}>
                 <Td><Badge>{event.event}</Badge></Td>
                 <Td><DateValue value={event.createdAt} /></Td>
