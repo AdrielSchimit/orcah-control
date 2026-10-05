@@ -7,10 +7,10 @@ import { getBudgetDetails } from "@/lib/queries";
 type BudgetItemRow = {
   id: number;
   description: string;
-  quantity: unknown;
+  quantity: string | number;
   unit: string;
-  unitPrice: unknown;
-  subtotal: unknown;
+  unitPrice: string | number | null;
+  subtotal: string | number | null;
 };
 
 type BudgetEventRow = {
