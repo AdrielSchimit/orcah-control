@@ -9,7 +9,7 @@ type RecentBudget = {
   number: string;
   customer: { name: string };
   status: string;
-  total: unknown;
+  total: string | number | null;
   createdAt: Date | string;
 };
 
