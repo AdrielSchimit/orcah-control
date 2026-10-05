@@ -1,6 +1,6 @@
 import { BudgetStatus, SubscriptionStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
 import { asNumber } from "@/lib/format";
+import { controlApi } from "@/lib/control-api";
 
 export type SeriesPoint = { label: string; count: number };
 
@@ -31,56 +31,45 @@ export function bucketByDay(rows: { createdAt: Date }[], days = 7): SeriesPoint[
   return dates.map((date) => ({ label: label(date), count: buckets.get(startOfDay(date).toISOString()) ?? 0 }));
 }
 
+type DashboardPayload = {
+  companyCount: number;
+  userCount: number;
+  budgetCount: number;
+  subscriptions: { status: SubscriptionStatus; _count: { _all: number } }[];
+  recentUsers: { createdAt: string }[];
+  recentCompanies: { createdAt: string }[];
+  budgetsByStatus: { status: BudgetStatus; _count: { _all: number } }[];
+  budgetTotals: { _sum: { total: unknown } };
+  approved: { _sum: { total: unknown } };
+};
+
 export async function getDashboardMetrics() {
-  const since30 = new Date();
-  since30.setDate(since30.getDate() - 29);
-
-  const [
-    companyCount,
-    userCount,
-    budgetCount,
-    subscriptions,
-    recentUsers,
-    recentCompanies,
-    budgetsByStatus,
-    budgetTotals,
-  ] = await Promise.all([
-    prisma.company.count(),
-    prisma.user.count(),
-    prisma.budget.count(),
-    prisma.subscription.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.user.findMany({ where: { createdAt: { gte: since30 } }, select: { createdAt: true } }),
-    prisma.company.findMany({ where: { createdAt: { gte: since30 } }, select: { createdAt: true } }),
-    prisma.budget.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.budget.aggregate({ _sum: { total: true } }),
-  ]);
-
-  const approved = await prisma.budget.aggregate({
-    where: { status: "approved" },
-    _sum: { total: true },
-  });
+  const data = await controlApi<DashboardPayload>("dashboard");
 
   const subscriptionSummary = Object.fromEntries(
     Object.values(SubscriptionStatus).map((status) => [status, 0]),
   ) as Record<SubscriptionStatus, number>;
-  for (const row of subscriptions) subscriptionSummary[row.status] = row._count._all;
+  for (const row of data.subscriptions) subscriptionSummary[row.status] = row._count._all;
 
   const budgetSummary = Object.fromEntries(
     Object.values(BudgetStatus).map((status) => [status, 0]),
   ) as Record<BudgetStatus, number>;
-  for (const row of budgetsByStatus) budgetSummary[row.status] = row._count._all;
+  for (const row of data.budgetsByStatus) budgetSummary[row.status] = row._count._all;
+
+  const recentUsers = data.recentUsers.map((row) => ({ createdAt: new Date(row.createdAt) }));
+  const recentCompanies = data.recentCompanies.map((row) => ({ createdAt: new Date(row.createdAt) }));
 
   return {
-    companyCount,
-    userCount,
-    budgetCount,
-    subscriptionCount: subscriptions.reduce((sum, row) => sum + row._count._all, 0),
+    companyCount: data.companyCount,
+    userCount: data.userCount,
+    budgetCount: data.budgetCount,
+    subscriptionCount: data.subscriptions.reduce((sum, row) => sum + row._count._all, 0),
     subscriptionSummary,
     budgetSummary,
     users7: bucketByDay(recentUsers, 7),
     users30: bucketByDay(recentUsers, 30),
     companies30: bucketByDay(recentCompanies, 30),
-    totalBudgeted: asNumber(budgetTotals._sum.total),
-    totalApproved: asNumber(approved._sum.total),
+    totalBudgeted: asNumber(data.budgetTotals._sum.total),
+    totalApproved: asNumber(data.approved._sum.total),
   };
 }
