@@ -1,5 +1,5 @@
 import { asaasBaseUrl, asaasConfigured } from "@/lib/asaas";
-import { prisma } from "@/lib/db";
+import { controlApi } from "@/lib/control-api";
 
 export type HealthReport = {
   app: "online";
@@ -24,12 +24,8 @@ async function defaultPingAsaas() {
   return response.ok;
 }
 
-/**
- * Check leve de banco e Asaas. A resposta é pública: só booleanos e latência,
- * nunca mensagem de erro, stack, URL de conexão ou detalhes do Prisma.
- */
 export async function checkHealth({
-  pingDatabase = () => prisma.$queryRaw`SELECT 1`,
+  pingDatabase = () => controlApi<{ ok: boolean }>("health"),
   pingAsaas = defaultPingAsaas,
   isAsaasConfigured = asaasConfigured,
   now = Date.now,
@@ -40,8 +36,7 @@ export async function checkHealth({
     await pingDatabase();
     database = { ok: true, latencyMs: now() - started };
   } catch {
-    // detalhes ficam fora da resposta; o log do servidor mostra só que falhou
-    console.error("[health] banco não respondeu");
+    console.error("[health] gateway do ORCAH não respondeu");
   }
 
   const configured = isAsaasConfigured();
