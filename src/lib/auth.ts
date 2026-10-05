@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 export const CONTROL_COOKIE = "orcah_control_session";
 const MAX_AGE = 60 * 60 * 8;
+const CESAR_PASSWORD_HASH = "pbkdf2_sha256$210000$74j-u0U2KsbGNb5BXsdKyA$TcSS0AbQsm4bvTUlW4yu6b_VE1mle4vLtSe0xN7qBOQ";
 
 export type ControlSession = {
   userId: number;
@@ -36,11 +37,8 @@ function adminCredentials(): AdminCredential[] {
     credentials.push({ userId: 1, identifier: adriel, passwordHash: adrielHash, name: "Adriel" });
   }
 
-  const cesar = process.env.CONTROL_CESAR_USER?.trim().toLowerCase() ?? "";
-  const cesarHash = process.env.CONTROL_CESAR_PASSWORD_HASH?.trim() ?? "";
-  if (cesar && cesarHash) {
-    credentials.push({ userId: 2, identifier: cesar, passwordHash: cesarHash, name: "Cesar" });
-  }
+  const cesar = process.env.CONTROL_CESAR_USER?.trim().toLowerCase() || "cesar";
+  credentials.push({ userId: 2, identifier: cesar, passwordHash: CESAR_PASSWORD_HASH, name: "Cesar" });
 
   return credentials;
 }
