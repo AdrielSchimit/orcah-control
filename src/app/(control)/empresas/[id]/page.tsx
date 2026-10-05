@@ -4,6 +4,15 @@ import { money } from "@/lib/format";
 import { requireSession } from "@/lib/auth";
 import { getCompanyDetails } from "@/lib/queries";
 
+type RecentBudget = {
+  id: number;
+  number: string;
+  customer: { name: string };
+  status: string;
+  total: unknown;
+  createdAt: Date | string;
+};
+
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireSession();
   const { id } = await params;
@@ -50,7 +59,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <DataTable>
           <thead><tr><Th>Número</Th><Th>Cliente</Th><Th>Status</Th><Th>Total</Th><Th>Criado</Th></tr></thead>
           <tbody className="divide-y divide-line">
-            {details.recentBudgets.map((budget) => (
+            {(details.recentBudgets as RecentBudget[]).map((budget) => (
               <tr key={budget.id}>
                 <Td>{budget.number}</Td>
                 <Td>{budget.customer.name}</Td>
