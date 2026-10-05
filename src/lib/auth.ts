@@ -12,6 +12,13 @@ export type ControlSession = {
   name: string;
 };
 
+type AdminCredential = {
+  userId: number;
+  identifier: string;
+  passwordHash: string;
+  name: string;
+};
+
 function authSecret() {
   const value = process.env.CONTROL_AUTH_SECRET?.trim();
   if (!value || value.length < 24) {
@@ -20,12 +27,22 @@ function authSecret() {
   return new TextEncoder().encode(value);
 }
 
-function adminUser() {
-  return process.env.CONTROL_ADMIN_USER?.trim().toLowerCase() ?? "";
-}
+function adminCredentials(): AdminCredential[] {
+  const credentials: AdminCredential[] = [];
 
-function passwordHash() {
-  return process.env.CONTROL_ADMIN_PASSWORD_HASH?.trim() ?? "";
+  const adriel = process.env.CONTROL_ADMIN_USER?.trim().toLowerCase() ?? "";
+  const adrielHash = process.env.CONTROL_ADMIN_PASSWORD_HASH?.trim() ?? "";
+  if (adriel && adrielHash) {
+    credentials.push({ userId: 1, identifier: adriel, passwordHash: adrielHash, name: "Adriel" });
+  }
+
+  const cesar = process.env.CONTROL_CESAR_USER?.trim().toLowerCase() ?? "";
+  const cesarHash = process.env.CONTROL_CESAR_PASSWORD_HASH?.trim() ?? "";
+  if (cesar && cesarHash) {
+    credentials.push({ userId: 2, identifier: cesar, passwordHash: cesarHash, name: "Cesar" });
+  }
+
+  return credentials;
 }
 
 export function adminEmailSet(value = process.env.CONTROL_ADMIN_EMAILS ?? "") {
@@ -39,11 +56,10 @@ export function adminEmailSet(value = process.env.CONTROL_ADMIN_EMAILS ?? "") {
 
 export function emailIsAllowed(identifier: string, list = adminEmailSet()) {
   const normalized = identifier.trim().toLowerCase();
-  return Boolean(normalized) && (normalized === adminUser() || list.has(normalized));
+  return Boolean(normalized) && (adminCredentials().some((credential) => credential.identifier === normalized) || list.has(normalized));
 }
 
-function verifyAdminPassword(password: string) {
-  const encoded = passwordHash();
+function verifyAdminPassword(password: string, encoded: string) {
   const [algorithm, iterationsText, saltText, expectedText] = encoded.split("$");
   if (algorithm !== "pbkdf2_sha256") return false;
 
@@ -105,16 +121,18 @@ export async function requireSession() {
 
 export async function authenticateControlUser(identifier: string, password: string) {
   const normalized = identifier.trim().toLowerCase();
-  if (!emailIsAllowed(normalized)) {
+  const credential = adminCredentials().find((item) => item.identifier === normalized);
+
+  if (!credential) {
     return { ok: false, error: "Acesso negado para este usuário." } as const;
   }
 
-  if (normalized !== adminUser() || !verifyAdminPassword(password)) {
+  if (!verifyAdminPassword(password, credential.passwordHash)) {
     return { ok: false, error: "Usuário ou senha inválidos." } as const;
   }
 
   return {
     ok: true,
-    user: { userId: 1, email: normalized, name: "Administrador ORÇAH" },
+    user: { userId: credential.userId, email: credential.identifier, name: credential.name },
   } as const;
 }
