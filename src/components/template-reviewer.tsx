@@ -15,6 +15,138 @@ type ReviewMap = Record<string, ReviewState>;
 const STORAGE_KEY = "orcah-control-template-qa-v1";
 const emptyReview = (): ReviewState => ({ capa: false, orcamento: false, formato: false, notes: "" });
 
+const CATALOG_RAW_BASE = "https://raw.githubusercontent.com/AdrielSchimit/orcah-clone/main/artifacts/service-cover-catalog";
+
+type CatalogBoard = {
+  title: string;
+  src: string;
+  kind: "covers" | "icons";
+};
+
+const catalogBoards: CatalogBoard[] = [
+  ...Array.from({ length: 7 }, (_, index) => ({
+    title: `Capas · prancha ${index + 1}`,
+    src: `${CATALOG_RAW_BASE}/covers-${index + 1}.png`,
+    kind: "covers" as const,
+  })),
+  ...Array.from({ length: 5 }, (_, index) => ({
+    title: `Ícones · prancha ${index + 1}`,
+    src: `${CATALOG_RAW_BASE}/icons-${index + 1}.png`,
+    kind: "icons" as const,
+  })),
+];
+
+function CatalogBoards() {
+  const [openBoard, setOpenBoard] = useState<CatalogBoard | null>(null);
+  const [boardFilter, setBoardFilter] = useState<"all" | "covers" | "icons">("all");
+
+  const visible = catalogBoards.filter((board) => boardFilter === "all" || board.kind === boardFilter);
+
+  return (
+    <>
+      <section className="mb-5 rounded-2xl border border-line/80 bg-white p-4 shadow-card sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold tracking-[-0.01em] text-ink">Pranchas do César</p>
+              <span className="rounded-full bg-gold-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800">PNG commitado</span>
+            </div>
+            <p className="mt-1.5 max-w-2xl text-xs leading-5 text-ink-soft">
+              Arquivos gerados por <code className="font-mono">scripts/preview-service-covers.tsx</code>. Use para revisão em lote; clique em qualquer prancha para ampliar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+            {([
+              ["all", "Todas"],
+              ["covers", "Capas"],
+              ["icons", "Ícones"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setBoardFilter(value)}
+                className={boardFilter === value ? "rounded-lg bg-white px-3 py-2 text-xs font-semibold text-ink shadow-sm" : "rounded-lg px-3 py-2 text-xs font-semibold text-ink-soft transition hover:text-ink"}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {visible.map((board) => (
+            <button
+              key={board.src}
+              type="button"
+              onClick={() => setOpenBoard(board)}
+              className="group overflow-hidden rounded-2xl border border-line/80 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-card"
+            >
+              <div className="relative aspect-[16/9] overflow-hidden bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={board.src}
+                  alt={board.title}
+                  className="h-full w-full object-contain transition duration-300 group-hover:scale-[1.015]"
+                  loading="lazy"
+                />
+                <span className="absolute right-3 top-3 rounded-full bg-ink/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
+                  ampliar
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-line/70 bg-white px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">{board.title}</p>
+                  <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-soft">
+                    artifacts/service-cover-catalog
+                  </p>
+                </div>
+                <span className={board.kind === "covers" ? "rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700" : "rounded-full bg-violet-50 px-2 py-1 text-[10px] font-bold text-violet-700"}>
+                  {board.kind === "covers" ? "capas" : "ícones"}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {openBoard ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-3 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={openBoard.title}
+          onClick={() => setOpenBoard(null)}
+        >
+          <div
+            className="flex max-h-[94vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink">{openBoard.title}</p>
+                <p className="mt-0.5 truncate font-mono text-[10px] text-ink-soft">{openBoard.src.split("/").at(-1)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenBoard(null)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-line bg-white text-lg text-ink-soft transition hover:bg-slate-50 hover:text-ink"
+                aria-label="Fechar prancha"
+              >
+                ×
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-3 sm:p-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={openBoard.src} alt={openBoard.title} className="mx-auto h-auto max-w-none rounded-xl bg-white shadow-card" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 const coverPlacements = [
   { x: 1160, y: 48, size: 180, angle: -14, opacity: 0.42 },
   { x: 1410, y: 65, size: 145, angle: 14, opacity: 0.32 },
@@ -350,6 +482,8 @@ export function TemplateReviewer({
       <div className="mb-5 overflow-hidden rounded-full bg-slate-200">
         <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: `${items.length ? (completed / items.length) * 100 : 0}%` }} />
       </div>
+
+      <CatalogBoards />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(430px,0.92fr)]">
         <div className="order-2 min-w-0 xl:order-1">
