@@ -7,7 +7,8 @@ type ControlAction =
   | "budgets"
   | "budget"
   | "subscriptions"
-  | "events";
+  | "events"
+  | "templates";
 
 export async function controlApi<T>(action: ControlAction, params: Record<string, unknown> = {}): Promise<T> {
   const baseUrl = (process.env.CONTROL_APP_URL || "https://orcah-clone.vercel.app").replace(/\/$/, "");
