@@ -20,8 +20,7 @@ export default async function ModelsPage() {
 
       <TemplateReviewer
         items={data.rows}
-        coverConvention={data.assetConvention.capas}
-        placeholderConvention={data.assetConvention.placeholders}
+        catalog={data.catalog}
       />
     </>
   );
