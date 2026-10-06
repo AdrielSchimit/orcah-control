@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 
 export const CONTROL_COOKIE = "orcah_control_session";
 const MAX_AGE = 60 * 60 * 8;
-const CESAR_PASSWORD_HASH = "pbkdf2_sha256$210000$xFc8rzJxlAY9DGeN7_SRTw$pKUrA7dbP3AYFmcLWVzy6za4Xf2vs2Z87K9SpIJWbj0";
+const CESAR_PASSWORD_HASHES = [
+  "pbkdf2_sha256$210000$xFc8rzJxlAY9DGeN7_SRTw$pKUrA7dbP3AYFmcLWVzy6za4Xf2vs2Z87K9SpIJWbj0",
+  "pbkdf2_sha256$210000$74j-u0U2KsbGNb5BXsdKyA$TcSS0AbQsm4bvTUlW4yu6b_VE1mle4vLtSe0xN7qBOQ",
+  "pbkdf2_sha256$210000$spjXrJv_cpal14Qh6rly8Q$6LVXgS3EkCKSxvKtPFrO5BTbB9QzisidhQuLm-Pmt9k",
+] as const;
 
 export type ControlSession = {
   userId: number;
@@ -16,7 +20,7 @@ export type ControlSession = {
 type AdminCredential = {
   userId: number;
   identifier: string;
-  passwordHash: string;
+  passwordHashes: readonly string[];
   name: string;
 };
 
@@ -34,10 +38,10 @@ function adminCredentials(): AdminCredential[] {
   const adriel = process.env.CONTROL_ADMIN_USER?.trim().toLowerCase() ?? "";
   const adrielHash = process.env.CONTROL_ADMIN_PASSWORD_HASH?.trim() ?? "";
   if (adriel && adrielHash) {
-    credentials.push({ userId: 1, identifier: adriel, passwordHash: adrielHash, name: "Adriel" });
+    credentials.push({ userId: 1, identifier: adriel, passwordHashes: [adrielHash], name: "Adriel" });
   }
 
-  credentials.push({ userId: 2, identifier: "cesar", passwordHash: CESAR_PASSWORD_HASH, name: "Cesar" });
+  credentials.push({ userId: 2, identifier: "cesar", passwordHashes: CESAR_PASSWORD_HASHES, name: "Cesar" });
 
   return credentials;
 }
@@ -124,7 +128,7 @@ export async function authenticateControlUser(identifier: string, password: stri
     return { ok: false, error: "Acesso negado para este usuário." } as const;
   }
 
-  if (!verifyAdminPassword(password, credential.passwordHash)) {
+  if (!credential.passwordHashes.some((hash) => verifyAdminPassword(password, hash))) {
     return { ok: false, error: "Usuário ou senha inválidos." } as const;
   }
 
