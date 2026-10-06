@@ -15,16 +15,45 @@ type ReviewMap = Record<string, ReviewState>;
 const STORAGE_KEY = "orcah-control-template-qa-v1";
 const emptyReview = (): ReviewState => ({ capa: false, orcamento: false, formato: false, notes: "" });
 
+const coverPlacements = [
+  { x: 1160, y: 48, size: 180, angle: -14, opacity: 0.42 },
+  { x: 1410, y: 65, size: 145, angle: 14, opacity: 0.32 },
+  { x: 1310, y: 300, size: 180, angle: 10, opacity: 0.38 },
+  { x: -55, y: 365, size: 150, angle: -18, opacity: 0.2 },
+] as const;
+
 function CoverPreview({ item, compact = false }: { item: TemplateReviewItem; compact?: boolean }) {
   return (
     <div
       className={compact ? "relative aspect-[3/1] w-full overflow-hidden" : "relative aspect-[3/1] w-full overflow-hidden rounded-2xl border border-line/70"}
       style={{ backgroundColor: item.coverTheme.background, color: item.coverTheme.accent }}
     >
-      <div
-        className="absolute inset-0 [&_svg]:h-full [&_svg]:w-full"
-        dangerouslySetInnerHTML={{ __html: item.coverSvg }}
-      />
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 1500 500"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {item.coverTheme.icons.map((icon, index) => {
+          const placement = coverPlacements[index % coverPlacements.length];
+          return (
+            <g
+              key={`${icon.name}-${index}`}
+              opacity={placement.opacity}
+              transform={`translate(${placement.x} ${placement.y}) scale(${placement.size / 100}) rotate(${placement.angle} 50 50)`}
+            >
+              {icon.paths.map((d, pathIndex) => <path key={pathIndex} d={d} />)}
+            </g>
+          );
+        })}
+        <g opacity="0.18" strokeWidth="2">
+          {item.coverTheme.pattern.map((d, index) => <path key={index} d={d} />)}
+        </g>
+      </svg>
     </div>
   );
 }
@@ -419,14 +448,14 @@ export function TemplateReviewer({
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <div className="rounded-xl bg-slate-50 p-3">
                           <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-soft">Ícones</p>
-                          <p className="mt-2 text-xs leading-5 text-ink">{selected.coverTheme.icons.join(" · ")}</p>
+                          <p className="mt-2 text-xs leading-5 text-ink">{selected.coverTheme.icons.map((icon) => icon.name).join(" · ")}</p>
                         </div>
                         <div className="rounded-xl bg-slate-50 p-3">
                           <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-soft">Paleta</p>
                           <div className="mt-2 flex items-center gap-2">
                             <span className="h-6 w-6 rounded-full border border-line" style={{ backgroundColor: selected.coverTheme.background }} />
                             <span className="h-6 w-6 rounded-full border border-line" style={{ backgroundColor: selected.coverTheme.accent }} />
-                            <span className="font-mono text-[10px] text-ink-soft">{selected.coverTheme.patternCount} patterns</span>
+                            <span className="font-mono text-[10px] text-ink-soft">{selected.coverTheme.pattern.length} patterns</span>
                           </div>
                         </div>
                       </div>
