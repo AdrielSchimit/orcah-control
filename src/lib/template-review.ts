@@ -64,12 +64,11 @@ export type TemplateReviewItem = {
   preview: TemplatePreview;
   exemplos: TemplateExample[];
   form: TemplateForm | null;
-  coverSvg: string;
   coverTheme: {
     background: string;
     accent: string;
-    icons: string[];
-    patternCount: number;
+    icons: Array<{ name: string; paths: string[] }>;
+    pattern: string[];
   };
 };
 
