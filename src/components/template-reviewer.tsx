@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TemplateReviewItem } from "@/lib/template-review";
 
-type ViewMode = "capa" | "orcamento" | "formato";
+type ViewMode = "capa" | "montar" | "orcamento" | "formato";
 type ReviewState = {
   capa: boolean;
   orcamento: boolean;
@@ -12,8 +12,37 @@ type ReviewState = {
 };
 type ReviewMap = Record<string, ReviewState>;
 
+type CoverDraft = {
+  background: string;
+  accent: string;
+  icons: string[];
+  patternOpacity: number;
+  iconIntensity: number;
+};
+
+type CoverDraftMap = Record<string, CoverDraft>;
+
 const STORAGE_KEY = "orcah-control-template-qa-v1";
+const EDITOR_STORAGE_KEY = "orcah-control-cover-builder-v1";
 const emptyReview = (): ReviewState => ({ capa: false, orcamento: false, formato: false, notes: "" });
+
+const colorPresets = [
+  { name: "Original", background: "#f7f5ef", accent: "#59677f" },
+  { name: "Azul", background: "#f1f6fb", accent: "#315b82" },
+  { name: "Verde", background: "#f2f7f3", accent: "#426957" },
+  { name: "Grafite", background: "#f1f2f4", accent: "#333b46" },
+  { name: "Lavanda", background: "#f6f3fa", accent: "#665477" },
+] as const;
+
+function defaultDraft(item: TemplateReviewItem): CoverDraft {
+  return {
+    background: item.coverTheme.background,
+    accent: item.coverTheme.accent,
+    icons: item.coverTheme.icons.slice(0, 4).map((icon) => icon.name),
+    patternOpacity: 0.18,
+    iconIntensity: 1,
+  };
+}
 
 const CATALOG_RAW_BASE = "https://raw.githubusercontent.com/AdrielSchimit/orcah-clone/main/artifacts/service-cover-catalog";
 
@@ -186,6 +215,266 @@ function CoverPreview({ item, compact = false }: { item: TemplateReviewItem; com
           {item.coverTheme.pattern.map((d, index) => <path key={index} d={d} />)}
         </g>
       </svg>
+    </div>
+  );
+}
+
+
+function MiniIcon({
+  paths,
+  accent,
+}: {
+  paths: string[];
+  accent: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className="h-9 w-9"
+      fill="none"
+      stroke={accent}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {paths.map((d, index) => <path key={index} d={d} />)}
+    </svg>
+  );
+}
+
+function BuilderPreview({
+  draft,
+  iconLibrary,
+  pattern,
+}: {
+  draft: CoverDraft;
+  iconLibrary: Array<{ name: string; paths: string[] }>;
+  pattern: string[];
+}) {
+  const iconMap = new Map(iconLibrary.map((icon) => [icon.name, icon.paths]));
+
+  return (
+    <div
+      className="relative aspect-[3/1] w-full overflow-hidden rounded-2xl border border-line/70 shadow-card"
+      style={{ backgroundColor: draft.background, color: draft.accent }}
+    >
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 1500 500"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {draft.icons.slice(0, 4).map((name, index) => {
+          const placement = coverPlacements[index % coverPlacements.length];
+          const paths = iconMap.get(name) ?? [];
+          return (
+            <g
+              key={`${name}-${index}`}
+              opacity={Math.min(1, placement.opacity * draft.iconIntensity)}
+              transform={`translate(${placement.x} ${placement.y}) scale(${placement.size / 100}) rotate(${placement.angle} 50 50)`}
+            >
+              {paths.map((d, pathIndex) => <path key={pathIndex} d={d} />)}
+            </g>
+          );
+        })}
+        <g opacity={draft.patternOpacity} strokeWidth="2">
+          {pattern.map((d, index) => <path key={index} d={d} />)}
+        </g>
+      </svg>
+
+      <div className="absolute bottom-3 left-3 rounded-full bg-white/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-ink shadow-sm backdrop-blur">
+        Preview ao vivo
+      </div>
+    </div>
+  );
+}
+
+function CoverBuilder({
+  item,
+  draft,
+  iconLibrary,
+  onChange,
+  onReset,
+}: {
+  item: TemplateReviewItem;
+  draft: CoverDraft;
+  iconLibrary: Array<{ name: string; paths: string[] }>;
+  onChange: (patch: Partial<CoverDraft>) => void;
+  onReset: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const iconMap = useMemo(() => new Map(iconLibrary.map((icon) => [icon.name, icon.paths])), [iconLibrary]);
+
+  async function copyConfig() {
+    const config = {
+      slug: item.slug,
+      background: draft.background,
+      accent: draft.accent,
+      icons: draft.icons.slice(0, 4),
+      qaPreview: {
+        patternOpacity: Number(draft.patternOpacity.toFixed(2)),
+        iconIntensity: Number(draft.iconIntensity.toFixed(2)),
+      },
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <BuilderPreview draft={draft} iconLibrary={iconLibrary} pattern={item.coverTheme.pattern} />
+
+      <section className="rounded-2xl border border-line/80 bg-white p-4 shadow-card sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Paleta</p>
+            <p className="mt-1 text-xs leading-5 text-ink-soft">Ajuste as duas cores principais e veja o resultado em tempo real.</p>
+          </div>
+          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-700">rascunho</span>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {([
+            ["background", "Fundo"],
+            ["accent", "Traço"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="rounded-xl border border-line bg-slate-50 p-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-soft">{label}</span>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={draft[key]}
+                  onChange={(event) => onChange({ [key]: event.target.value })}
+                  className="h-10 w-12 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                />
+                <input
+                  value={draft[key]}
+                  onChange={(event) => onChange({ [key]: event.target.value })}
+                  className="min-w-0 flex-1 rounded-lg border border-line bg-white px-3 py-2 font-mono text-xs uppercase text-ink outline-none focus:border-gold"
+                />
+              </div>
+            </label>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-soft">Presets rápidos</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {colorPresets.map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                onClick={() => onChange({ background: preset.background, accent: preset.accent })}
+                className="flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:border-slate-300"
+              >
+                <span className="flex -space-x-1">
+                  <span className="h-4 w-4 rounded-full border border-white" style={{ backgroundColor: preset.background }} />
+                  <span className="h-4 w-4 rounded-full border border-white" style={{ backgroundColor: preset.accent }} />
+                </span>
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-line/80 bg-white p-4 shadow-card sm:p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Ícones da capa</p>
+        <p className="mt-1 text-xs leading-5 text-ink-soft">Os 4 slots seguem as posições oficiais usadas pelo renderer do César.</p>
+
+        <div className="mt-4 space-y-2.5">
+          {Array.from({ length: 4 }, (_, index) => {
+            const currentName = draft.icons[index] ?? iconLibrary[0]?.name ?? "";
+            const currentPaths = iconMap.get(currentName) ?? [];
+            return (
+              <div key={index} className="grid grid-cols-[52px_minmax(0,1fr)] items-center gap-3 rounded-xl border border-line bg-slate-50 p-2.5">
+                <div className="grid h-12 w-12 place-items-center rounded-lg bg-white shadow-sm">
+                  <MiniIcon paths={currentPaths} accent={draft.accent} />
+                </div>
+                <label className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink-soft">Slot {index + 1}</span>
+                  <select
+                    value={currentName}
+                    onChange={(event) => {
+                      const next = [...draft.icons];
+                      next[index] = event.target.value;
+                      onChange({ icons: next });
+                    }}
+                    className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm font-medium text-ink outline-none focus:border-gold"
+                  >
+                    {iconLibrary.map((icon) => <option key={icon.name} value={icon.name}>{icon.name}</option>)}
+                  </select>
+                </label>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-line/80 bg-white p-4 shadow-card sm:p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Intensidade visual</p>
+        <div className="mt-4 space-y-4">
+          <label className="block">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-ink">Patterns</span>
+              <span className="font-mono text-[10px] text-ink-soft">{Math.round(draft.patternOpacity * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="0.4"
+              step="0.02"
+              value={draft.patternOpacity}
+              onChange={(event) => onChange({ patternOpacity: Number(event.target.value) })}
+              className="mt-2 w-full accent-amber-500"
+            />
+          </label>
+
+          <label className="block">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-ink">Desenhos</span>
+              <span className="font-mono text-[10px] text-ink-soft">{Math.round(draft.iconIntensity * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0.4"
+              max="1.6"
+              step="0.05"
+              value={draft.iconIntensity}
+              onChange={(event) => onChange({ iconIntensity: Number(event.target.value) })}
+              className="mt-2 w-full accent-amber-500"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-ink">Rascunho seguro</p>
+            <p className="mt-1 text-xs leading-5 text-ink-soft">Salva automaticamente neste navegador. Não altera a main até a gente transformar a configuração em commit.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={onReset} className="rounded-xl border border-line bg-white px-3 py-2.5 text-xs font-semibold text-ink transition hover:bg-slate-100">
+              Restaurar padrão
+            </button>
+            <button type="button" onClick={copyConfig} className="rounded-xl bg-ink px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-ink-panel">
+              {copied ? "Copiado ✓" : "Copiar configuração"}
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
