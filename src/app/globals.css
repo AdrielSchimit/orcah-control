@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #121826;
-  --ink-soft: #526071;
-  --ink-panel: #182235;
-  --paper: #f4f6f9;
+  --ink: #151923;
+  --ink-soft: #647083;
+  --ink-panel: #111722;
+  --paper: #f6f7fa;
   --card: #ffffff;
-  --line: #dfe5ee;
-  --gold: #ffb020;
-  --gold-soft: #fff3dc;
+  --line: #e5e8ee;
+  --gold: #f7b521;
+  --gold-soft: #fff6df;
   --ok: #15803d;
   --warn: #b7791f;
   --bad: #b91c1c;
@@ -32,13 +32,17 @@
   --color-warn: var(--warn);
   --color-bad: var(--bad);
   --color-blue: var(--blue);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --shadow-card: 0 1px 2px rgb(18 24 38 / 0.05), 0 16px 40px rgb(18 24 38 / 0.08);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.03), 0 8px 24px rgb(15 23 42 / 0.045);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
@@ -46,6 +50,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
 input,
@@ -55,7 +60,30 @@ textarea {
   font: inherit;
 }
 
+button,
+summary,
+a,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold) 35%, white);
+  color: var(--ink);
+}
+
 :focus-visible {
-  outline: 3px solid var(--gold);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9ced7 transparent;
+}
+
+@media (max-width: 639px) {
+  body {
+    overflow-x: hidden;
+  }
 }
