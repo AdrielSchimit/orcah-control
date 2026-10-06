@@ -85,6 +85,7 @@ export type TemplateReviewPayload = {
     icons: number;
     renderer: string;
     themes: string;
+    iconLibrary: Array<{ name: string; paths: string[] }>;
   };
 };
 
