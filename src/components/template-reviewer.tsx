@@ -680,7 +680,7 @@ export function TemplateReviewer({
   catalog,
 }: {
   items: TemplateReviewItem[];
-  catalog: { covers: number; icons: number; renderer: string; themes: string };
+  catalog: { covers: number; icons: number; renderer: string; themes: string; iconLibrary: Array<{ name: string; paths: string[] }> };
 }) {
   const initial = items.find((item) => item.slug === "pintor") ?? items[0];
   const [selectedSlug, setSelectedSlug] = useState(initial?.slug ?? "");
@@ -688,12 +688,15 @@ export function TemplateReviewer({
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState("");
   const [reviews, setReviews] = useState<ReviewMap>({});
+  const [coverDrafts, setCoverDrafts] = useState<CoverDraftMap>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) setReviews(JSON.parse(raw) as ReviewMap);
+      const editorRaw = window.localStorage.getItem(EDITOR_STORAGE_KEY);
+      if (editorRaw) setCoverDrafts(JSON.parse(editorRaw) as CoverDraftMap);
     } catch {}
     setHydrated(true);
   }, []);
@@ -702,6 +705,11 @@ export function TemplateReviewer({
     if (!hydrated) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
   }, [hydrated, reviews]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    window.localStorage.setItem(EDITOR_STORAGE_KEY, JSON.stringify(coverDrafts));
+  }, [coverDrafts, hydrated]);
 
   const families = useMemo(
     () => Array.from(new Set(items.map((item) => item.familiaNome))).sort((a, b) => a.localeCompare(b, "pt-BR")),
@@ -724,6 +732,9 @@ export function TemplateReviewer({
   const selected = items.find((item) => item.slug === selectedSlug) ?? initial;
   const reviewFor = (slug: string) => reviews[slug] ?? emptyReview();
   const selectedReview = selected ? reviewFor(selected.slug) : emptyReview();
+  const selectedDraft = selected
+    ? (coverDrafts[selected.slug] ?? defaultDraft(selected))
+    : null;
 
   const completed = items.filter((item) => {
     const review = reviewFor(item.slug);
@@ -741,6 +752,23 @@ export function TemplateReviewer({
     const current = reviewFor(slug);
     const next = !(current.capa && current.orcamento && current.formato);
     setReview(slug, { capa: next, orcamento: next, formato: next });
+  }
+
+  function setCoverDraft(slug: string, patch: Partial<CoverDraft>) {
+    const item = items.find((candidate) => candidate.slug === slug);
+    if (!item) return;
+    setCoverDrafts((current) => ({
+      ...current,
+      [slug]: { ...(current[slug] ?? defaultDraft(item)), ...patch },
+    }));
+  }
+
+  function resetCoverDraft(slug: string) {
+    setCoverDrafts((current) => {
+      const next = { ...current };
+      delete next[slug];
+      return next;
+    });
   }
 
   if (!selected) {
@@ -829,8 +857,8 @@ export function TemplateReviewer({
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
-                  {([["capa", "Capa"], ["orcamento", "Orçamento"], ["formato", "Formatação"]] as const).map(([value, label]) => (
+                <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 sm:grid-cols-4">
+                  {([["capa", "Capa"], ["montar", "Montar"], ["orcamento", "Orçamento"], ["formato", "Formatação"]] as const).map(([value, label]) => (
                     <button key={value} type="button" onClick={() => setMode(value)} className={mode === value ? "rounded-lg bg-white px-2 py-2.5 text-xs font-semibold text-ink shadow-sm" : "rounded-lg px-2 py-2.5 text-xs font-semibold text-ink-soft transition hover:text-ink"}>
                       {label}
                     </button>
@@ -884,6 +912,15 @@ export function TemplateReviewer({
                       </div>
                     </div>
                   </div>
+                ) : null}
+                {mode === "montar" && selectedDraft ? (
+                  <CoverBuilder
+                    item={selected}
+                    draft={selectedDraft}
+                    iconLibrary={catalog.iconLibrary}
+                    onChange={(patch) => setCoverDraft(selected.slug, patch)}
+                    onReset={() => resetCoverDraft(selected.slug)}
+                  />
                 ) : null}
                 {mode === "orcamento" ? <BudgetPreview item={selected} /> : null}
                 {mode === "formato" ? <FormattingPreview item={selected} /> : null}
