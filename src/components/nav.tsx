@@ -12,6 +12,7 @@ const sections: ControlNavSection[] = [
       { href: "/empresas", label: "Empresas", icon: "building" },
       { href: "/usuarios", label: "Usuários", icon: "users" },
       { href: "/orcamentos", label: "Orçamentos", icon: "budget" },
+      { href: "/modelos", label: "Capas & modelos", icon: "models" },
       { href: "/assinaturas", label: "Assinaturas", icon: "subscription" },
     ],
   },
