@@ -64,8 +64,13 @@ export type TemplateReviewItem = {
   preview: TemplatePreview;
   exemplos: TemplateExample[];
   form: TemplateForm | null;
-  capaUrl: string;
-  placeholderUrl: string;
+  coverSvg: string;
+  coverTheme: {
+    background: string;
+    accent: string;
+    icons: string[];
+    patternCount: number;
+  };
 };
 
 export type TemplateReviewPayload = {
@@ -76,9 +81,11 @@ export type TemplateReviewPayload = {
     clienteVe: string;
     ramos: string[];
   }>;
-  assetConvention: {
-    capas: string;
-    placeholders: string;
+  catalog: {
+    covers: number;
+    icons: number;
+    renderer: string;
+    themes: string;
   };
 };
 
