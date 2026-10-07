@@ -8,7 +8,12 @@ type ControlAction =
   | "budget"
   | "subscriptions"
   | "events"
-  | "templates";
+  | "templates"
+  | "support";
+
+export class ControlGatewayError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
 
 export async function controlApi<T>(action: ControlAction, params: Record<string, unknown> = {}): Promise<T> {
   const baseUrl = (process.env.CONTROL_APP_URL || "https://orcah-clone.vercel.app").replace(/\/$/, "");
@@ -23,9 +28,14 @@ export async function controlApi<T>(action: ControlAction, params: Record<string
     },
     body: JSON.stringify({ action, params }),
     cache: "no-store",
+    signal: AbortSignal.timeout(12000),
   });
 
   if (!response.ok) {
+    if (action === "support") {
+      const data = await response.json().catch(() => ({}));
+      throw new ControlGatewayError(response.status, typeof data.error === "string" ? data.error : "Falha no suporte.");
+    }
     throw new Error(`ORCAH Control gateway respondeu ${response.status}.`);
   }
 
