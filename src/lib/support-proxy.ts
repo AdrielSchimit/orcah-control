@@ -20,7 +20,7 @@ export async function proxySupport(request: Request, path: string[], deps: Proxy
       operation = "inbox"; params = { status: url.searchParams.get("status") || "", q: (url.searchParams.get("q") || "").slice(0, 100), offset: Number(url.searchParams.get("offset")) || 0 };
     } else if (path[0] === "threads" && path[1] && path[1].length <= 100) {
       params.threadId = path[1];
-      if (request.method === "GET" && path.length === 2) { operation = "thread"; params.before = url.searchParams.get("before") || undefined; }
+      if (request.method === "GET" && path.length === 2) { operation = "thread"; params.before = url.searchParams.get("before") || undefined; params.after = url.searchParams.get("after") || undefined; }
       else {
         const origin = request.headers.get("origin");
         if (request.headers.get("sec-fetch-site") === "cross-site" || (origin && origin !== url.origin)) return result({ error: "Origem inválida." }, 403);
