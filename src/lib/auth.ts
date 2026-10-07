@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export const CONTROL_COOKIE = "orcah_control_session";
-const MAX_AGE = 60 * 60 * 8;
+export const CONTROL_SESSION_SHORT = 60 * 60 * 8;
+export const CONTROL_SESSION_REMEMBERED = 60 * 60 * 24 * 30;
 const CESAR_PASSWORD_HASHES = [
   "pbkdf2_sha256$210000$xFc8rzJxlAY9DGeN7_SRTw$pKUrA7dbP3AYFmcLWVzy6za4Xf2vs2Z87K9SpIJWbj0",
   "pbkdf2_sha256$210000$74j-u0U2KsbGNb5BXsdKyA$TcSS0AbQsm4bvTUlW4yu6b_VE1mle4vLtSe0xN7qBOQ",
@@ -77,21 +78,21 @@ function verifyAdminPassword(password: string, encoded: string) {
   }
 }
 
-export function controlCookieOptions() {
+export function controlCookieOptions(maxAge = CONTROL_SESSION_SHORT) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
-    maxAge: MAX_AGE,
+    maxAge,
   };
 }
 
-export async function signControlSession(session: ControlSession) {
+export async function signControlSession(session: ControlSession, maxAge = CONTROL_SESSION_SHORT) {
   return new SignJWT(session)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE}s`)
+    .setExpirationTime(`${maxAge}s`)
     .sign(authSecret());
 }
 
