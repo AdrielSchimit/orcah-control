@@ -1,7 +1,7 @@
 import { Badge, DataTable, DateValue, LinkCell, PageHeader, ReadOnlyNotice, Td, Th } from "@/components/ui";
 import { companyIdFromExternalReference, asaasConfigured, asaasEnvironment, listAsaasCustomers, listAsaasPayments, listAsaasSubscriptions, sanitizeAsaasCustomer } from "@/lib/asaas";
 import { money } from "@/lib/format";
-import { prisma } from "@/lib/db";
+import { controlApi } from "@/lib/control-api";
 import { requireSession } from "@/lib/auth";
 
 export default async function AsaasPage() {
@@ -32,7 +32,7 @@ export default async function AsaasPage() {
     .map((customer) => companyIdFromExternalReference(customer.externalReference))
     .filter((id): id is number => Boolean(id));
   const companies = companyIds.length
-    ? await prisma.company.findMany({ where: { id: { in: companyIds } }, select: { id: true, name: true } })
+    ? (await controlApi<{ rows: { id: number; name: string }[] }>("companies", { ids: companyIds })).rows
     : [];
   const companyById = new Map(companies.map((company) => [company.id, company]));
 

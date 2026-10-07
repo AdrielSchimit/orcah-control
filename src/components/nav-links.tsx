@@ -8,11 +8,12 @@ export type ControlNavSection = {
   items: Array<{
     href: string;
     label: string;
-    icon: "dashboard" | "building" | "users" | "budget" | "models" | "subscription" | "wallet" | "health" | "events" | "logs";
+    icon: "dashboard" | "building" | "users" | "budget" | "models" | "subscription" | "wallet" | "health" | "events" | "logs" | "support";
   }>;
 };
 
 const paths: Record<ControlNavSection["items"][number]["icon"], React.ReactNode> = {
+  support: <><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H3l2-5A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 10h8M8 14h5"/></>,
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
   building: <><path d="M4 21V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v16"/><path d="M8 7h5M8 11h5M8 15h5M2 21h20M17 9h2a1 1 0 0 1 1 1v11"/></>,
   users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,

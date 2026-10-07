@@ -1,6 +1,11 @@
-import { BudgetStatus, SubscriptionStatus } from "@prisma/client";
 import { asNumber } from "@/lib/format";
 import { controlApi } from "@/lib/control-api";
+
+// Gateway wire values; monitoring must not require a generated database client.
+const BudgetStatus = ["draft", "sent", "viewed", "waiting", "approved", "rejected", "expired"] as const;
+type BudgetStatus = typeof BudgetStatus[number];
+const SubscriptionStatus = ["trialing", "active", "past_due", "canceled"] as const;
+type SubscriptionStatus = typeof SubscriptionStatus[number];
 
 export type SeriesPoint = { label: string; count: number };
 
@@ -47,12 +52,12 @@ export async function getDashboardMetrics() {
   const data = await controlApi<DashboardPayload>("dashboard");
 
   const subscriptionSummary = Object.fromEntries(
-    Object.values(SubscriptionStatus).map((status) => [status, 0]),
+    SubscriptionStatus.map((status) => [status, 0]),
   ) as Record<SubscriptionStatus, number>;
   for (const row of data.subscriptions) subscriptionSummary[row.status] = row._count._all;
 
   const budgetSummary = Object.fromEntries(
-    Object.values(BudgetStatus).map((status) => [status, 0]),
+    BudgetStatus.map((status) => [status, 0]),
   ) as Record<BudgetStatus, number>;
   for (const row of data.budgetsByStatus) budgetSummary[row.status] = row._count._all;
 

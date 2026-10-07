@@ -11,6 +11,7 @@ const sections: ControlNavSection[] = [
     items: [
       { href: "/empresas", label: "Empresas", icon: "building" },
       { href: "/usuarios", label: "Usuários", icon: "users" },
+      { href: "/suporte", label: "Suporte", icon: "support" },
       { href: "/orcamentos", label: "Orçamentos", icon: "budget" },
       { href: "/modelos", label: "Capas & modelos", icon: "models" },
       { href: "/assinaturas", label: "Assinaturas", icon: "subscription" },
@@ -76,7 +77,7 @@ function SidebarContent({ session }: { session: ControlSession }) {
         />
         <div className="mt-4 flex items-center gap-2">
           <span className="rounded-md bg-gold px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-ink">Control</span>
-          <span className="text-xs text-white/40">interno · read-only</span>
+          <span className="text-xs text-white/40">gestão interna</span>
         </div>
       </div>
 
