@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
-import { authenticateControlUser, CONTROL_COOKIE, controlCookieOptions, signControlSession } from "@/lib/auth";
+import {
+  authenticateControlUser,
+  CONTROL_COOKIE,
+  CONTROL_SESSION_REMEMBERED,
+  CONTROL_SESSION_SHORT,
+  controlCookieOptions,
+  signControlSession,
+} from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { email?: string; password?: string };
+    const body = (await request.json()) as {
+      email?: string;
+      password?: string;
+      remember?: boolean | string;
+    };
+
     const result = await authenticateControlUser(body.email ?? "", body.password ?? "");
 
     if (!result.ok) {
@@ -12,11 +24,17 @@ export async function POST(request: Request) {
       return response;
     }
 
+    const remember =
+      body.remember === true ||
+      body.remember === "true" ||
+      body.remember === "on";
+    const maxAge = remember ? CONTROL_SESSION_REMEMBERED : CONTROL_SESSION_SHORT;
+
     const response = NextResponse.json({ ok: true, next: "/dashboard" });
     response.cookies.set(
       CONTROL_COOKIE,
-      await signControlSession(result.user),
-      controlCookieOptions(),
+      await signControlSession(result.user, maxAge),
+      controlCookieOptions(maxAge),
     );
     return response;
   } catch (error) {
